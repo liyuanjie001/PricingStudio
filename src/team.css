@@ -1,0 +1,79 @@
+.scheme-selector-group { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.edition-switch { display: inline-flex; padding: 3px; border: 1px solid #e0e7f1; border-radius: 8px; background: #eef2f8; }
+.edition-switch button { padding: 7px 14px; font-size: 11px; border-radius: 5px; color: #8190a6; }
+.edition-switch button[aria-pressed=true] { background: white; color: var(--blue); box-shadow: 0 1px 4px #203b6312; }
+.team-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.team-editor, .team-summary { min-width: 0; }
+.team-workspace .card-heading { padding: 0 24px; }
+.team-workspace .card-heading p { line-height: 1.7; }
+.team-seat-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 20px 24px; }
+.seat-counter { display: flex; align-items: center; gap: 12px; }
+.seat-counter strong { font-size: 12px; font-weight: 550; color: #536f98; }
+.team-seat-table { min-width: 530px; }
+.team-seat-table th, .team-seat-table td { padding: 14px 10px; }
+.team-seat-table th:first-child, .team-seat-table td:first-child { padding-left: 24px; }
+.team-seat-table th:last-child, .team-seat-table td:last-child { padding-right: 20px; }
+.team-seat-table .number-field>label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.team-seat-table td .number-field { max-width: 105px; min-width: 76px; }
+.team-seat-table td .input-wrap { border-color: #e0e7f1; background: #fafcff; }
+.team-seat-table td .input-wrap input { padding-left: 8px; }
+.team-seat-table td .input-suffix { padding-right: 6px; font-size: 9px; }
+.team-seat-table td small { display: block; font-size: 9px; color: #97a5b8; margin-top: 6px; }
+.seat-label { color: #56779d; font-weight: 550; }
+.seat-price { color: var(--blue); font-weight: 500; }
+.team-seat-total { padding: 18px 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 11px; color: #8296b1; background: #f8faff; }
+.team-seat-total strong { font-weight: 550; color: #567aaa; margin-left: 5px; }
+.team-explanation { padding: 17px 24px 22px; color: #8f9eb3; font-size: 10px; line-height: 1.9; }
+.team-explanation p+p { margin-top: 8px; }
+.team-editor>.alert { margin: 0 20px 15px; }
+.team-summary-body { padding: 24px; }
+.team-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.team-settings-grid>div { min-width: 0; }
+.team-settings-grid p { font-size: 9px; color: #96a5b8; line-height: 1.8; margin-top: 8px; }
+.team-total-price { background: linear-gradient(115deg, #f1f6ff, #f3faf7); border: 1px solid #e2ebf7; border-radius: 8px; padding: 21px; margin: 22px 0; }
+.team-total-price>span { display: block; font-size: 11px; color: #728bad; }
+.team-total-price strong { display: block; font-size: 34px; letter-spacing: -1px; font-weight: 600; color: var(--blue); margin: 7px 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.team-total-price small { font-size: 10px; color: #8e9fb5; }
+.team-cost-lines { margin: 0; }
+.team-cost-lines>div { display: flex; justify-content: space-between; gap: 15px; font-size: 11px; color: #8498b2; padding: 9px 0; }
+.team-cost-lines dd { margin: 0; color: #5d7c9e; font-variant-numeric: tabular-nums; }
+.team-cost-lines .team-total-cost { margin-top: 7px; padding-top: 16px; border-top: 1px solid var(--line); color: #4f6b94; }
+.team-total-cost dd { font-weight: 550; }
+.team-profit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 23px 0; }
+.team-profit-grid span { display: block; font-size: 11px; color: #879ab3; }
+.team-profit-grid strong { display: block; margin-top: 8px; font-size: 25px; font-weight: 550; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.team-profit-status { margin-top: 12px; color: #839991; font-size: 10px; line-height: 1.9; }
+.team-config-body { padding: 24px; }
+.team-config-body>.name-field { margin-bottom: 24px; }
+.team-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.team-config-grid>.number-field { min-width: 0; }
+.team-unit-price { background: #f4f8ff; border: 1px solid #e2eafb; border-radius: 8px; padding: 18px; margin: 22px 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.team-unit-price span { display: block; font-size: 10px; color: #879bb5; }
+.team-unit-price strong { display: block; font-size: 29px; font-weight: 550; color: var(--blue); margin-top: 8px; overflow-wrap: anywhere; }
+.team-unit-price b { display: block; font-size: 17px; color: #6983a7; font-weight: 500; margin-top: 8px; }
+.team-unit-price small { display: block; font-size: 9px; color: var(--green); margin-top: 7px; }
+.team-count-row { display: flex; align-items: flex-end; gap: 15px; margin-bottom: 9px; }
+.team-count-field { max-width: 210px; flex: 1; }
+.team-count-row .seat-counter { border: 1px solid var(--line); border-radius: 7px; padding: 6px; gap: 9px; }
+.team-count-row .seat-counter .icon-button { padding: 6px; }
+.team-config-body>.team-seat-total { margin-top: 23px; padding: 16px; border-radius: 7px; }
+.team-config-body>.team-explanation { padding: 18px 0; }
+.team-package-actions { display: flex; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--line); padding-top: 17px; }
+@media (max-width: 1100px) { .team-workspace { grid-template-columns: 1fr; } .team-summary-body { display: block; } }
+@media (max-width: 580px) {
+  .scheme-selector-group { gap: 12px; }
+  .scheme-toolbar { align-items: flex-start; }
+  .edition-switch button { padding: 6px 11px; font-size: 10px; }
+  .team-workspace { gap: 16px; }
+  .team-workspace .card-heading { padding: 0 18px; }
+  .team-seat-toolbar, .team-explanation, .team-seat-total, .team-summary-body { padding: 18px; }
+  .team-config-body { padding: 18px; }
+  .team-config-grid { gap: 14px; }
+  .team-seat-total { flex-direction: column; }
+  .team-settings-grid { gap: 12px; }
+  .team-settings-grid .number-field>label { font-size: 10px; }
+  .team-total-price strong { font-size: 30px; }
+}
+.package-billing { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 14px; margin-bottom: 18px; background: #f5f7fc; border-radius: 8px; border: 1px solid var(--border); }
+.package-billing .field-hint { flex: 1; margin: 0; }
+.package-tabs small { font-weight: 400; font-size: 11px; opacity: .7; }

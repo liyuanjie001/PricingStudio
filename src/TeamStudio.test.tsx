@@ -1,0 +1,177 @@
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import App from './App';
+import { STORAGE_KEY } from './storage';
+import { restoreState } from './domain';
+
+vi.mock('./export', () => ({ exportPlan: vi.fn().mockResolvedValue(undefined) }));
+beforeEach(() => localStorage.clear());
+afterEach(cleanup);
+function openTeam() { render(<App />); fireEvent.click(screen.getByRole('button', { name: '团队版' })); }
+function change(label: string, value: string) { fireEvent.change(screen.getByLabelText(label), { target: { value } }); }
+function select(name: string) { fireEvent.click(within(screen.getByRole('region', { name: '全部套餐对比' })).getByRole('button', { name })); }
+
+describe('team packages workspace', () => {
+  it.each(['每席原价', '团队毛利率', '套餐席位数', '团队账号总数', '团队套餐优惠'])('retains the %s input and calculated results while its draft is empty', (label) => {
+    openTeam();
+    const input = screen.getByLabelText(label) as HTMLInputElement;
+    const original = input.value;
+    const budget = screen.getByTestId('team-budget').textContent;
+    input.focus();
+    fireEvent.change(input, { target: { value: '' } });
+    expect(screen.getByLabelText(label)).toBe(input);
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue('');
+    expect(screen.getByTestId('team-budget')).toHaveTextContent(budget!);
+    fireEvent.change(input, { target: { value: original } });
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue(original);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+  it('keeps credits on discounts but recalculates them for margin and account edits', () => {
+    openTeam();
+    change('团队毛利率', '60');
+    expect(screen.getByTestId('team-budget')).toHaveTextContent('160.00');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('270');
+    change('团队套餐优惠', '10');
+    expect(screen.getByTestId('team-budget')).toHaveTextContent('160.00');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('270');
+    change('团队账号总数', '3');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('200');
+    expect(screen.getByTestId('team-credit-budget')).toHaveTextContent('66.00');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('165');
+    expect(screen.getByTestId('team-profit')).toHaveTextContent('216.00');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('60');
+    const row = screen.getByRole('row', { name: '团队套餐 1对比' });
+    expect(within(row).getByText('330 积分')).toBeInTheDocument();
+    expect(within(row).getByText('¥144.00', { selector: '.budget-cell' })).toBeInTheDocument();
+  });
+  it('warns when account costs prevent the target without fabricating negative credits', () => {
+    openTeam(); change('每席原价', '30');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('0');
+    expect(screen.getByTestId('team-profit')).toHaveTextContent('8.00');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('13.33');
+    expect(screen.getByTestId('team-profit')).not.toHaveClass('text-red');
+    change('每席原价', '0');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('');
+    expect(screen.getByTestId('team-profit')).toHaveClass('text-red');
+  });
+  it('multiplies a uniform per-seat config and calculates final shared costs', () => {
+    openTeam();
+    expect(screen.getByTestId('seat-count')).toHaveTextContent('2 个席位');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('370');
+    expect(screen.getByTestId('team-sale-price')).toHaveTextContent('400.00');
+    expect(screen.getByTestId('team-actual-cost')).toHaveTextContent('200.00');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('50');
+    expect(screen.queryByLabelText('每席积分')).not.toBeInTheDocument();
+    change('团队套餐优惠', '10');
+    expect(screen.getByTestId('team-sale-price')).toHaveTextContent('360.00');
+    expect(screen.getByTestId('team-profit')).toHaveTextContent('160.00');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('44.44');
+    change('每席原价', '500'); change('团队毛利率', '60');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('500');
+    expect(screen.getByTestId('team-credits')).toHaveTextContent('1,540');
+    expect(screen.getByTestId('team-sale-price')).toHaveTextContent('900.00');
+    expect(screen.getByTestId('team-profit')).toHaveTextContent('540.00');
+  });
+  it('changes only the seat quantity, not the number of config rows', () => {
+    openTeam();
+    expect(screen.getByRole('button', { name: '减少一个席位' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '增加一个席位' }));
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('3');
+    expect(screen.getAllByLabelText('每席原价')).toHaveLength(1);
+    expect(screen.getByTestId('team-list-price')).toHaveTextContent('600.00');
+    expect(screen.getByLabelText('团队账号总数')).toHaveValue('2');
+    fireEvent.click(screen.getByRole('button', { name: '减少一个席位' }));
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('2');
+    change('套餐席位数', '5');
+    expect(screen.getByTestId('team-credits')).toHaveTextContent('1,850');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('370');
+    expect(screen.getByLabelText('团队毛利率')).toHaveValue('57.8');
+    expect(screen.getAllByLabelText('每席原价')).toHaveLength(1);
+  });
+  it('adds independent packages with different prices and automatic credits', () => {
+    openTeam();
+    change('团队套餐名称', '基础团队'); change('套餐席位数', '5'); change('团队套餐优惠', '10');
+    fireEvent.click(screen.getByRole('button', { name: '新增团队套餐' }));
+    change('团队套餐名称', '专业团队'); change('每席原价', '500'); change('团队毛利率', '60');
+    fireEvent.click(screen.getByRole('button', { name: '保存套餐' }));
+    expect(screen.getByLabelText('每席原价')).toHaveValue('500');
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('2');
+    expect(screen.getByLabelText('团队套餐优惠')).toHaveValue('0');
+    select('基础团队');
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('5');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('200');
+    expect(screen.getByLabelText('团队套餐优惠')).toHaveValue('10');
+    expect(screen.getByTestId('seat-credits')).toHaveTextContent('370');
+    const comparison = screen.getByRole('region', { name: '全部套餐对比' });
+    expect(within(comparison).getAllByRole('row')).toHaveLength(7);
+    fireEvent.click(within(comparison).getByRole('button', { name: '专业团队' }));
+    expect(screen.getByLabelText('每席原价')).toHaveValue('500');
+  });
+  it('copies and deletes packages without modifying the source', () => {
+    openTeam(); change('套餐席位数', '4');
+    expect(screen.getByRole('button', { name: '删除团队套餐' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '复制团队套餐' }));
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('4');
+    change('每席原价', '900');
+    select('团队套餐 1');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('200');
+    select('团队套餐 1 · 副本');
+    fireEvent.click(screen.getByRole('button', { name: '删除团队套餐' }));
+    fireEvent.click(screen.getByRole('button', { name: '确认删除套餐' }));
+    expect(screen.queryByRole('tab', { name: '团队套餐 1 · 副本' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('4');
+  });
+  it('preserves input focus, validates the minimum and warns about losses', async () => {
+    openTeam(); const user = userEvent.setup();
+    const input = screen.getByLabelText('每席原价'); await user.clear(input); await user.type(input, '110');
+    expect(input).toHaveFocus(); expect(input).toHaveValue('110');
+    change('套餐席位数', '1');
+    expect(screen.getByRole('alert')).toHaveTextContent('请修正');
+    expect(screen.getByTestId('seat-count')).toHaveTextContent('2 个席位');
+    fireEvent.click(screen.getByRole('button', { name: '增加一个席位' }));
+    expect(screen.getByLabelText('套餐席位数')).toHaveValue('3');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    change('团队毛利率', '100');
+    expect(screen.getByLabelText('团队毛利率')).toHaveAttribute('aria-invalid', 'true');
+    change('团队毛利率', '50'); change('团队账号总数', '1.5');
+    expect(screen.getByLabelText('团队账号总数')).toHaveAttribute('aria-invalid', 'true');
+    change('团队账号总数', '2'); change('团队套餐优惠', '99');
+    expect(screen.getByText(/当前团队套餐已亏损/)).toBeInTheDocument();
+    expect(screen.getByTestId('team-profit')).toHaveClass('text-red');
+  });
+  it('retains all packages and the selection through personal/team switching and reload', () => {
+    const view = render(<App />); change('套餐原价', '123');
+    fireEvent.click(screen.getByRole('button', { name: '团队版' }));
+    change('每席原价', '110'); change('团队账号总数', '5'); change('团队套餐优惠', '15');
+    fireEvent.click(screen.getByRole('button', { name: '新增团队套餐' }));
+    change('每席原价', '500');
+    fireEvent.click(screen.getByRole('button', { name: '保存套餐' }));
+    fireEvent.click(screen.getByRole('button', { name: '个人版' }));
+    expect(screen.getByLabelText('套餐原价')).toHaveValue('123');
+    fireEvent.click(screen.getByRole('button', { name: '团队版' }));
+    fireEvent(window, new Event('pagehide'));
+    const team = restoreState(localStorage.getItem(STORAGE_KEY)!).plans[0].team;
+    expect(team.packages).toHaveLength(2); expect(team.packages[0].discount).toBe('15');
+    view.unmount(); render(<App />);
+    expect(screen.getByRole('button', { name: '团队套餐 2' }).closest('tr')).toHaveClass('selected-row');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('500');
+    select('团队套餐 1');
+    expect(screen.getByLabelText('每席原价')).toHaveValue('110');
+    expect(screen.getByLabelText('团队账号总数')).toHaveValue('5');
+  });
+  it('resets package defaults and invalid drafts after confirmation', () => {
+    openTeam(); fireEvent.click(screen.getByRole('button', { name: '新增团队套餐' }));
+    change('团队套餐优惠', '');
+    fireEvent.click(document.querySelector('.scheme-settings summary')!);
+    fireEvent.click(screen.getByRole('button', { name: '重置当前方案' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '确认重置' }));
+    expect(screen.getByLabelText('团队套餐优惠')).toHaveValue('0');
+    expect(screen.getByTestId('seat-count')).toHaveTextContent('2 个席位');
+    expect(screen.getByRole('row', { name: '团队套餐 1对比' })).toHaveClass('selected-row');
+    expect(screen.queryByRole('row', { name: '团队套餐 2对比' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
